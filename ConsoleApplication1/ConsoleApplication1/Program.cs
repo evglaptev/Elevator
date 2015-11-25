@@ -7,6 +7,7 @@ namespace ConsoleApplication1
 {
     class Program
     {
+        тест
         static double eps = 0.1;
         static int LevelCount = 10;
         static int RefreshHuman = 30;
