@@ -7,9 +7,10 @@ namespace ConsoleApplication1
 {
     class Program
     {
+        static double Speed = 10;
         static double eps = 0.1;
-        static int LevelCount = 10;
-        static int RefreshHuman = 30;
+        static int LevelCount = 100;
+        static double  RefreshHuman = 0.05;
         static int ElevatorCount = 1;
         static StreamWriter log = new StreamWriter("log.txt");
 
@@ -50,7 +51,7 @@ namespace ConsoleApplication1
 
             Time.Start();
             Floor[] levels = new Floor[LevelCount];
-            var manager = new ElevatorManager(LevelCount, ElevatorCount);
+            var manager = new ElevatorManager(LevelCount, ElevatorCount,levels);
             for (var i = 0; i < LevelCount; i++)
             {
                 Floor TmpFloor = new Floor(manager, i);
@@ -62,12 +63,18 @@ namespace ConsoleApplication1
             var humanGenerator = new HumanGenerator(RefreshHuman, levels);
 
             for (var i = 0; i < ElevatorCount; i++)
-                elevators[i] = new Elevator();
+                elevators[i] = new Elevator(manager);
 
 
+            int ik=0;
+            DateTime startData = DateTime.Now;
 
-            while (true)
+            Console.WriteLine(startData.Ticks/10000000);
+           // Console.ReadKey();
+
+            while ((DateTime.Now-startData).Ticks/10000000 < 60)
             {
+                
                 //log.WriteLine("humangeneratorUpdate"+ elevators[0].CorrentLevel);
                 humanGenerator.Update();
                 //log.WriteLine("managerupdate"+ elevators[0].CorrentLevel);
@@ -77,17 +84,19 @@ namespace ConsoleApplication1
                         for (var j = 0; j < elevators[i].Humans.Count; j++)
                             elevators[i].Humans[j].Update();
 
-                foreach (var floor in levels)
+                foreach (var floor in levels) {
                     foreach (var human in floor.Queue)
                         human.Update();
+                    }
                 // log.WriteLine("elevatorUpdate"+ elevators[0].CorrentLevel);
 
-                System.Threading.Thread.Sleep(5);
+                //System.Threading.Thread.Sleep(5);
                 for (var i = 0; i < ElevatorCount; i++)
                 {
                     elevators[i].Update();
                 }
             }
+            log.Dispose();
         }
         // Define other methods and classes here
 
@@ -106,7 +115,7 @@ namespace ConsoleApplication1
                 Queue = new List<Human>();
                 this.Level = Level;
                 Button = false;
-
+                log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
                 log.Write("Создан экземпляр этажа ");
                 log.WriteLine(Level);
             }
@@ -115,6 +124,7 @@ namespace ConsoleApplication1
             {
                 Manager.AddCommand(Level);
                 Button = true;
+                log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
                 log.Write("Нажата кнопка на этаже ");
                 log.WriteLine(Level);
             }
@@ -123,19 +133,29 @@ namespace ConsoleApplication1
             public void AddHuman(Human human)
             {
                 Queue.Add(human);
+                log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
                 log.Write("Человек добавлен в очередь на этаж ");
                 log.WriteLine(human.StartLevel);
+            }
+
+            internal void deleteHuman(Human human)
+            {
+                log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
+                Console.WriteLine("Перед удалением человека.");
+                //Console.WriteLine(Queue.Remove(human));
             }
         }
 
         class ElevatorManager
         {
+            Floor[] Floors;
             List<int> Task;
             Elevator[] elevators;
             int ElevatorCount;
             public int LevelCount { get; private set; }
-            public ElevatorManager(int level, int ElevatorCount)
+            public ElevatorManager(int level, int ElevatorCount, Floor[] floors)
             {
+                Floors = floors;
                 LevelCount = level;
                 Task = new List<int>();
                 this.ElevatorCount = ElevatorCount;
@@ -156,9 +176,11 @@ namespace ConsoleApplication1
                 if (Task.Count > 0)
                     for (int i = 0; i < ElevatorCount; i++)
                     {
+                        log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
                         log.WriteLine("ElevatorFree = " + elevators[i].Free);
                         if (elevators[i].Free)
                         {
+                            log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
                             log.WriteLine("Лифт пуст");
                             elevators[i].MoveTo(Task[0]);
                             Task.RemoveAt(0);
@@ -174,12 +196,17 @@ namespace ConsoleApplication1
             {
                 foreach (var elev in elevators)
                 {
-                    if ((Math.Abs(elev.CorrentLevel - level) <= eps) && (elev.OpenDoor == true))
+                    if ((Math.Abs(elev.CorrentLevel - level) <= 2*eps) && (elev.OpenDoor == true))
                     {
                         return elev;
                     }
                 }
                 return null;
+            }
+
+            internal Floor GetFloor(Elevator elevator)
+            {
+                return Floors[(int)Math.Round(elevator.CorrentLevel)];
             }
         }
 
@@ -189,59 +216,68 @@ namespace ConsoleApplication1
 
             public List<Human> Humans;
 
-            double Speed = 1;
+
             public Double CorrentLevel { private set; get; }
             float StartLevel;
             float FinishLevel;
             double LastTimeUpdate;
+            private ElevatorManager Manager;
 
             public bool Free { get; set; }
 
             public bool OpenDoor { get; set; }
 
-            public Elevator()
+            public Elevator(ElevatorManager manager)
             {
+                Manager = manager;
                 Humans = new List<Human>();
                 Free = true;
                 StartLevel = 0;
             }
-            public void MoveTo(int Floor)
+            public void MoveTo(int level)
             {
-                FinishLevel = Floor;
+                FinishLevel = level;
                 //  CorrentLevel = StartLevel;
-                if (Floor != (int)CorrentLevel)
+                if (level != (int)CorrentLevel)
                 {
 
                     Free = false;
-                    log.WriteLine("MoveTo");
                     LastTimeUpdate = Time.Current;
                 }
-                else Free = true;
-                log.WriteLine("Лифт пуст в Update.");
+                else
+                {
+                    Free = true;
+                    log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
+                    log.WriteLine("Лифт пуст в Update.");
+                }
                 // else OpenDoor = true;
             }
             public void PressButton(int level)
             {
-                FinishLevel = level;
+                MoveTo(level);
             }
             public void Update()
             {
                 if (!Free)//&& !OpenDoor)
                 {
-                    log.WriteLine(CorrentLevel + "  " + FinishLevel);
                     if (Math.Abs(CorrentLevel - FinishLevel) > eps * 2)
                     {
 
                         int UpDown = 1;
                         if (FinishLevel - CorrentLevel < 0) UpDown = -1;
                         double dt = Time.Current - LastTimeUpdate;
+                        int lastLevel =(int)Math.Round(CorrentLevel);
                         CorrentLevel += UpDown * Speed * dt;
-                        log.WriteLine("Лифт на этаже" + CorrentLevel);
+                        if (lastLevel != (int)Math.Round(CorrentLevel))
+                        {
+                            log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
+                            log.WriteLine("Лифт на этаже" + Math.Round(CorrentLevel));
+                        }
 
                     }
                     else
                     {
-
+                        log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
                         log.WriteLine("Лифт ожидает, когда будет нажата кнопка этажа. Двери открыты.");
                         OpenDoor = true;
                         Free = true;
@@ -252,16 +288,23 @@ namespace ConsoleApplication1
             internal void AddHuman(Human human)
             {
                 Humans.Add(human);
-                log.WriteLine("Человек зашел в лифт.");
+
+                log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
+                log.WriteLine("Человек зашел в лифт на "+ human.StartLevel+" этаже, ему надо на "+human.FinishLevel+" этаж.");
+            }
+
+            internal Floor getFloor()
+            {
+                return Manager.GetFloor(this);
             }
         }
 
         class HumanGenerator
         {
-            int RefreshHuman;
+            double RefreshHuman;
             double LastCreate;
             Floor[] Floors;
-            public HumanGenerator(int refreshHuman, Floor[] Floors)
+            public HumanGenerator(double refreshHuman, Floor[] Floors)
             {
                 RefreshHuman = refreshHuman;
                 this.Floors = Floors;
@@ -278,6 +321,7 @@ namespace ConsoleApplication1
                     Floors[StartLevel].AddHuman(human);
                     human.Floor = Floors[StartLevel];
                     LastCreate = Time.Current;
+                    log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
                     log.WriteLine("Update humangenerator");
                 }
 
@@ -291,7 +335,7 @@ namespace ConsoleApplication1
         class Human
         {
             public int status { get; set; }
-            int FinishLevel;
+            public int FinishLevel;// убрать паблик 
             public int StartLevel { set; get; }
             Floor floor;
             Elevator elevator;
@@ -338,8 +382,8 @@ namespace ConsoleApplication1
             public void Update()
             {
 
-                    if (status == 0)
-                    {
+                if (status == 0)
+                {
                     if (floor != null)
                     {
                         if (!floor.Button)
@@ -348,21 +392,47 @@ namespace ConsoleApplication1
                         }
 
                         elevator = floor.GetElevator();
+                   
                         if (elevator != null)
                         {
                             elevator.AddHuman(this);
                             floor = null;
                             status = 1;
+                            log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
                             log.WriteLine("Status = 1");
                         }
-                    } 
-                    else if (status == 1)
-                    {
-                        elevator.PressButton(FinishLevel);
-                        log.WriteLine("Человек нажал на кнопку "+ FinishLevel+" в лифте.");
                     }
                 }
-            }
+                else if (status == 1)
+                {
+                    if (elevator != null)
+                    {
+                        elevator.PressButton(FinishLevel);
+                        status = 2;
+                        log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
+                        log.WriteLine("Человек нажал на кнопку " + FinishLevel + " в лифте.");
+                    }
+                } else if (status == 2)
+                {
+                    floor = elevator.getFloor();
+                    if (Math.Abs(elevator.CorrentLevel - FinishLevel) <= eps * 2)
+                    {
+                        log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
+                        log.WriteLine("Человек вышел из лифта");
+                        //floor.AddHuman(this);
+                        status = 3;
+                    }
+                        
+                }
+                else if (status == 3)
+                {
+                   
+                    Console.WriteLine("Человек покинул этаж.");
+                    floor.deleteHuman(this);
+                    status++;
+                        
+                }
+            }     
         }
 
             static class Time
