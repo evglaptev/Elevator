@@ -13,3 +13,6 @@ C:\Users\Evgeny\Desktop\Projects\Projects\ConsoleApplication1\ConsoleApplication
 C:\Users\Evgeny\Desktop\Projects\Projects\ConsoleApplication1\ConsoleApplication1\bin\Debug\ConsoleApplication1.exe
 C:\Users\Evgeny\Desktop\Projects\Projects\ConsoleApplication1\ConsoleApplication1\bin\Debug\ConsoleApplication1.pdb
 C:\Users\Evgeny\Desktop\Projects\Projects\ConsoleApplication1\ConsoleApplication1\obj\Debug\ConsoleApplication1.csprojResolveAssemblyReference.cache
+H:\GIT\ConsoleApplication1\ConsoleApplication1\bin\Debug\ConsoleApplication1.exe.config
+H:\GIT\ConsoleApplication1\ConsoleApplication1\obj\Debug\ConsoleApplication1.exe
+H:\GIT\ConsoleApplication1\ConsoleApplication1\obj\Debug\ConsoleApplication1.pdb
