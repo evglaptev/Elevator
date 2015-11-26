@@ -10,7 +10,7 @@ namespace ConsoleApplication1
         static double Speed = 10;
         static double eps = 0.1;
         static int LevelCount = 100;
-        static double  RefreshHuman = 0.05;
+        static double  RefreshHuman = 0.01;
         static int ElevatorCount = 1;
         static StreamWriter log = new StreamWriter("log.txt");
 
@@ -66,13 +66,12 @@ namespace ConsoleApplication1
                 elevators[i] = new Elevator(manager);
 
 
-            int ik=0;
             DateTime startData = DateTime.Now;
 
             Console.WriteLine(startData.Ticks/10000000);
            // Console.ReadKey();
 
-            while ((DateTime.Now-startData).Ticks/10000000 < 60)
+            while ((DateTime.Now-startData).Ticks/10000000 < 20)
             {
                 
                 //log.WriteLine("humangeneratorUpdate"+ elevators[0].CorrentLevel);
@@ -141,7 +140,6 @@ namespace ConsoleApplication1
             internal void deleteHuman(Human human)
             {
                 log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
-                Console.WriteLine("Перед удалением человека.");
                 //Console.WriteLine(Queue.Remove(human));
             }
         }
@@ -224,6 +222,7 @@ namespace ConsoleApplication1
             private ElevatorManager Manager;
 
             public bool Free { get; set; }
+            public bool lastFree { get; set; }
 
             public bool OpenDoor { get; set; }
 
@@ -297,6 +296,12 @@ namespace ConsoleApplication1
             {
                 return Manager.GetFloor(this);
             }
+
+            internal void DeleteHuman(Human human)
+            {
+                Humans.Remove(human);
+                log.WriteLine("Человек удален из лифта");
+            }
         }
 
         class HumanGenerator
@@ -350,6 +355,7 @@ namespace ConsoleApplication1
                 while (StartLevel == FinishLevel)
                 {
                     StartLevel = Rand.Next(1, LevelCount);
+                    Console.WriteLine("Finish=Start");
                 }
             }
 
@@ -415,8 +421,10 @@ namespace ConsoleApplication1
                 } else if (status == 2)
                 {
                     floor = elevator.getFloor();
-                    if (Math.Abs(elevator.CorrentLevel - FinishLevel) <= eps * 2)
+                    
+                    if (Math.Abs(elevator.CorrentLevel - FinishLevel) <= eps)
                     {
+                        elevator.DeleteHuman(this);
                         log.Write(DateTime.Now.Minute + ":" + DateTime.Now.Second + " - ");
                         log.WriteLine("Человек вышел из лифта");
                         //floor.AddHuman(this);
@@ -426,9 +434,7 @@ namespace ConsoleApplication1
                 }
                 else if (status == 3)
                 {
-                   
-                    Console.WriteLine("Человек покинул этаж.");
-                    floor.deleteHuman(this);
+                         floor.deleteHuman(this);
                     status++;
                         
                 }
